@@ -35,6 +35,8 @@ freyja variants [bamfile] --variants [variant outfile name] --depths [depths out
 ```
 which uses both samtools and iVar. Note that the reference should match the fasta file used for alignment. In cases where multiple reference genomes are present in the reference fasta, the user can specify the name of the desired reference genome with `--refname [name-of-reference]`. To enable alternative variant calling methods ( such as [LoFreq](https://csb5.github.io/lofreq/)),  we also allow users to provide a VCF file using the `--variants` option (in addition to the usual depth file, which can be obtained using a command like ```samtools mpileup -aa -A -d 600000 -Q 20 -q 0 -B -f ref.fasta sample.bam | cut -f1-4 > sample.depth```).
 
+Variants and coverage depth can also be exported from CLC Genomics Workbench. Export `mapping variants` as `[variants-file].clc.var` and `mapping coverage` as `[depth-file].clc.dpt`. Make sure to change the extensions appropriately, so the script recognizes they're from CLC. Then use them directly in `demix`.
+
 We can then run Freyja on the output files using the commmand:
 ```
 freyja demix [variants-file] [depth-file] --output [output-file]

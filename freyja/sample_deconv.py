@@ -35,27 +35,40 @@ def buildLineageMap(locDir):
 
 def build_mix_and_depth_arrays(fn, depthFn, muts, covcut):
     input_is_vcf = fn.lower().endswith('vcf')
+    input_is_clc = fn.lower().endswith('clc.var')
+    dpt_input_is_clc = depthFn.lower().endswith('clc.dpt')
     if input_is_vcf:
         df = read_snv_frequencies_vcf(fn, depthFn, muts)
+    if input_is_clc:
+        df = read_snv_frequencies_clc(fn, depthFn, muts)
     else:
         df = read_snv_frequencies_ivar(fn, depthFn, muts)
 
     # only works for substitutions, but that's what we get from usher tree
     df_depth = pd.read_csv(depthFn, sep='\t', header=None, index_col=1)
+    df_depth=df_depth[~df_depth.index.duplicated(keep='first')]
     df['mutName'] = df['REF'] + df['POS'].astype(str) + df['ALT']
     df = df.drop_duplicates(subset='mutName')
     df.set_index('mutName', inplace=True)
     keptInds = set(muts) & set(df.index)
     mix = df.loc[list(keptInds), 'ALT_FREQ'].astype(float)
     mix.name = fn
-    depths = pd.Series({kI: df_depth.loc[int(re.findall(r'\d+', kI)[0]), 3]
+    coverage_column_index=10 if dpt_input_is_clc else 3
+    depths = pd.Series({kI: df_depth.loc[int(re.findall(r'\d+', kI)[0]), coverage_column_index]
                         .astype(float) for kI in muts}, name=fn)
-    coverage = 100.*np.sum(df_depth.loc[:, 3] >= covcut)/df_depth.shape[0]
+    coverage = 100.*np.sum(df_depth.loc[:, coverage_column_index] >= covcut)/df_depth.shape[0]
     return mix, depths, coverage
 
 
 def read_snv_frequencies_ivar(fn, depthFn, muts):
     df = pd.read_csv(fn, sep='\t')
+    return df
+
+
+def read_snv_frequencies_clc(fn, depthFn, muts):
+    df = pd.read_csv(fn, sep='\t')
+    df.rename({"Reference Position":"POS","Reference":"REF","Allele":"ALT","Frequency":"ALT_FREQ"},axis=1,inplace=True)
+    df["ALT_FREQ"]=df["ALT_FREQ"]/100
     return df
 
 
