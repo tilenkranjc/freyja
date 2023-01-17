@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from joblib import Parallel, delayed
 from tqdm import tqdm
 import matplotlib
+import re
 
 
 def buildLineageMap(locDir):
@@ -68,7 +69,8 @@ def read_snv_frequencies_ivar(fn, depthFn, muts):
 def read_snv_frequencies_clc(fn, depthFn, muts):
     df = pd.read_csv(fn, sep='\t')
     df.rename({"Reference Position":"POS","Reference":"REF","Allele":"ALT","Frequency":"ALT_FREQ"},axis=1,inplace=True)
-    df["ALT_FREQ"]=df["ALT_FREQ"]/100
+    df["ALT_FREQ"]=df["ALT_FREQ"].str.replace(",",".")
+    df["ALT_FREQ"]=pd.to_numeric(df["ALT_FREQ"])/100
     return df
 
 
